@@ -66,58 +66,89 @@ const getInitialState = <T,>(key: string, defaultValue: T): T => {
 
 export default function CodeFixClientPage() {
   const { toast } = useToast();
-  const [files, setFiles] = useState<UploadedFile[]>(() => getInitialState('files', []));
-  const [selectedFile, setSelectedFile] = useState<UploadedFile | null>(() => getInitialState('selectedFile', null));
-  const [errorMessage, setErrorMessage] = useState<string>(() => getInitialState('errorMessage', ''));
-  const [analysisResult, setAnalysisResult] = useState<SuggestCodeFixesOutput | null>(() => getInitialState('analysisResult', null));
+  const [files, setFiles] = useState<UploadedFile[]>([]);
+  const [selectedFile, setSelectedFile] = useState<UploadedFile | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [analysisResult, setAnalysisResult] = useState<SuggestCodeFixesOutput | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [dragActive, setDragActive] = useState<boolean>(false);
   
-  const [fixError, setFixError] = useState<boolean>(() => getInitialState('fixError', true));
-  const [improveErrorHandling, setImproveErrorHandling] = useState<boolean>(() => getInitialState('improveErrorHandling', true));
-  const [addDebugging, setAddDebugging] = useState<boolean>(() => getInitialState('addDebugging', true));
-  const [enhanceUserMessages, setEnhanceUserMessages] = useState<boolean>(() => getInitialState('enhanceUserMessages', true));
+  const [fixError, setFixError] = useState<boolean>(true);
+  const [improveErrorHandling, setImproveErrorHandling] = useState<boolean>(true);
+  const [addDebugging, setAddDebugging] = useState<boolean>(true);
+  const [enhanceUserMessages, setEnhanceUserMessages] = useState<boolean>(true);
 
   const [isGeneratingReadme, setIsGeneratingReadme] = useState<boolean>(false);
-  const [generatedReadme, setGeneratedReadme] = useState<string | null>(() => getInitialState('generatedReadme', null));
+  const [generatedReadme, setGeneratedReadme] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  // Hydration-safe state initialization from localStorage
+  useEffect(() => {
+    setFiles(getInitialState('files', []));
+    setSelectedFile(getInitialState('selectedFile', null));
+    setErrorMessage(getInitialState('errorMessage', ''));
+    setAnalysisResult(getInitialState('analysisResult', null));
+    setGeneratedReadme(getInitialState('generatedReadme', null));
+    setFixError(getInitialState('fixError', true));
+    setImproveErrorHandling(getInitialState('improveErrorHandling', true));
+    setAddDebugging(getInitialState('addDebugging', true));
+    setEnhanceUserMessages(getInitialState('enhanceUserMessages', true));
+  }, []);
   
   useEffect(() => {
-    localStorage.setItem('files', JSON.stringify(files));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('files', JSON.stringify(files));
+    }
   }, [files]);
   
   useEffect(() => {
-    localStorage.setItem('selectedFile', JSON.stringify(selectedFile));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('selectedFile', JSON.stringify(selectedFile));
+    }
   }, [selectedFile]);
 
   useEffect(() => {
-    localStorage.setItem('errorMessage', JSON.stringify(errorMessage));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('errorMessage', JSON.stringify(errorMessage));
+    }
   }, [errorMessage]);
 
   useEffect(() => {
-    localStorage.setItem('analysisResult', JSON.stringify(analysisResult));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('analysisResult', JSON.stringify(analysisResult));
+    }
   }, [analysisResult]);
 
   useEffect(() => {
-    localStorage.setItem('generatedReadme', JSON.stringify(generatedReadme));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('generatedReadme', JSON.stringify(generatedReadme));
+    }
   }, [generatedReadme]);
 
   useEffect(() => {
-    localStorage.setItem('fixError', JSON.stringify(fixError));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('fixError', JSON.stringify(fixError));
+    }
   }, [fixError]);
 
   useEffect(() => {
-    localStorage.setItem('improveErrorHandling', JSON.stringify(improveErrorHandling));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('improveErrorHandling', JSON.stringify(improveErrorHandling));
+    }
   }, [improveErrorHandling]);
 
   useEffect(() => {
-    localStorage.setItem('addDebugging', JSON.stringify(addDebugging));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('addDebugging', JSON.stringify(addDebugging));
+    }
   }, [addDebugging]);
 
   useEffect(() => {
-    localStorage.setItem('enhanceUserMessages', JSON.stringify(enhanceUserMessages));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('enhanceUserMessages', JSON.stringify(enhanceUserMessages));
+    }
   }, [enhanceUserMessages]);
 
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
@@ -309,11 +340,13 @@ export default function CodeFixClientPage() {
     setErrorMessage('');
     
     // Clear relevant localStorage
-    localStorage.removeItem('files');
-    localStorage.removeItem('selectedFile');
-    localStorage.removeItem('errorMessage');
-    localStorage.removeItem('analysisResult');
-    localStorage.removeItem('generatedReadme');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('files');
+      localStorage.removeItem('selectedFile');
+      localStorage.removeItem('errorMessage');
+      localStorage.removeItem('analysisResult');
+      localStorage.removeItem('generatedReadme');
+    }
   }
 
   const handlePasteFromClipboard = async () => {
@@ -634,3 +667,5 @@ export default function CodeFixClientPage() {
     </div>
   );
 }
+
+    
