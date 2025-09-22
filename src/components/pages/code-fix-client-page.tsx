@@ -25,7 +25,6 @@ import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import python from 'react-syntax-highlighter/dist/esm/languages/prism/python';
 import batch from 'react-syntax-highlighter/dist/esm/languages/prism/batch';
 import markdown from 'react-syntax-highlighter/dist/esm/languages/prism/markdown';
-import JSZip from 'jszip';
 
 
 import { cn } from '@/lib/utils';
@@ -196,37 +195,16 @@ export default function CodeFixClientPage() {
     }
   };
 
-  const handleDownload = async () => {
-    if (!analysisResult || analysisResult.correctedFiles.length === 0) return;
-  
-    if (analysisResult.correctedFiles.length === 1) {
-      // Download single file
-      const correctedFile = analysisResult.correctedFiles[0];
-      const blob = new Blob([correctedFile.correctedCode], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = correctedFile.name;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } else {
-      // Download zip file
-      const zip = new JSZip();
-      analysisResult.correctedFiles.forEach(file => {
-        zip.file(file.name, file.correctedCode);
-      });
-      const blob = await zip.generateAsync({ type: 'blob' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'fixed-files.zip';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
+  const handleDownload = (correctedFile: CorrectedFile) => {
+    const blob = new Blob([correctedFile.correctedCode], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = correctedFile.name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
   
   const clearAllFiles = () => {
@@ -390,42 +368,56 @@ export default function CodeFixClientPage() {
                 </>
               )}
 
-              {!isLoading && analysisResult && selectedFile && (
+              {!isLoading && analysisResult && (
                 <>
-                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                  {analysisResult.correctedFiles.length > 0 && (
                     <Card>
                       <CardHeader>
-                        <CardTitle className="font-headline text-lg">Original Code ({selectedFile.name})</CardTitle>
+                        <CardTitle className="font-headline text-xl">Corrected Files</CardTitle>
                       </CardHeader>
-                      <CardContent className="p-0">
-                        <SyntaxHighlighter language={selectedFile.language} style={atomDark} showLineNumbers customStyle={{ margin: 0, borderRadius: '0 0 0.5rem 0.5rem', maxHeight: '500px' }} codeTagProps={{ className: 'font-code' }}>
-                          {selectedFile.content}
-                        </SyntaxHighlighter>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle className="font-headline text-lg">Corrected Code</CardTitle>
-                        {analysisResult.correctedFiles.length > 0 && (
-                         <Button size="sm" variant="secondary" onClick={handleDownload}>
-                           <Download className="mr-2 h-4 w-4" /> 
-                           Download {analysisResult.correctedFiles.length > 1 ? 'All' : ''}
-                         </Button>
-                        )}
-                      </CardHeader>
-                      <CardContent className="p-0">
-                        {correctedFileForSelected ? (
-                          <SyntaxHighlighter language={selectedFile.language} style={atomDark} showLineNumbers customStyle={{ margin: 0, borderRadius: '0 0 0.5rem 0.5rem', maxHeight: '500px' }} codeTagProps={{ className: 'font-code' }}>
-                            {correctedFileForSelected}
-                          </SyntaxHighlighter>
-                        ) : (
-                          <div className="flex items-center justify-center h-full p-6 text-center text-muted-foreground rounded-b-lg bg-muted/20">
-                            <p>No changes suggested for this file.</p>
+                      <CardContent className="space-y-2">
+                        {analysisResult.correctedFiles.map(file => (
+                          <div key={file.name} className="flex items-center justify-between p-2 rounded-md bg-muted/30">
+                            <span className="font-code text-sm">{file.name}</span>
+                            <Button size="sm" variant="secondary" onClick={() => handleDownload(file)}>
+                              <Download className="mr-2 h-4 w-4" />
+                              Download
+                            </Button>
                           </div>
-                        )}
+                        ))}
                       </CardContent>
                     </Card>
-                  </div>
+                  )}
+                  {selectedFile && (
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="font-headline text-lg">Original Code ({selectedFile.name})</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                          <SyntaxHighlighter language={selectedFile.language} style={atomDark} showLineNumbers customStyle={{ margin: 0, borderRadius: '0 0 0.5rem 0.5rem', maxHeight: '500px' }} codeTagProps={{ className: 'font-code' }}>
+                            {selectedFile.content}
+                          </SyntaxHighlighter>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                          <CardTitle className="font-headline text-lg">Corrected Code</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                          {correctedFileForSelected ? (
+                            <SyntaxHighlighter language={selectedFile.language} style={atomDark} showLineNumbers customStyle={{ margin: 0, borderRadius: '0 0 0.5rem 0.5rem', maxHeight: '500px' }} codeTagProps={{ className: 'font-code' }}>
+                              {correctedFileForSelected}
+                            </SyntaxHighlighter>
+                          ) : (
+                            <div className="flex items-center justify-center h-full p-6 text-center text-muted-foreground rounded-b-lg bg-muted/20">
+                              <p>No changes suggested for this file.</p>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
                   <Card>
                     <CardHeader>
                       <CardTitle className="font-headline text-xl">Explanation</CardTitle>
