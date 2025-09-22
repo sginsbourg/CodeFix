@@ -22,10 +22,18 @@ import { useToast } from '@/hooks/use-toast';
 import { fixCodeAction } from '@/app/actions';
 import type { SuggestCodeFixesOutput } from '@/ai/flows/suggest-code-fixes';
 import { Skeleton } from '@/components/ui/skeleton';
-import SyntaxHighlighter from 'react-syntax-highlighter';
-import { atomOneDark } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import python from 'react-syntax-highlighter/dist/esm/languages/prism/python';
+import batch from 'react-syntax-highlighter/dist/esm/languages/prism/batch';
+import markdown from 'react-syntax-highlighter/dist/esm/languages/prism/markdown';
+
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+
+SyntaxHighlighter.registerLanguage('python', python);
+SyntaxHighlighter.registerLanguage('batch', batch);
+SyntaxHighlighter.registerLanguage('markdown', markdown);
 
 type SupportedLanguage = 'python' | 'batch' | 'plaintext' | 'markdown';
 
@@ -52,8 +60,8 @@ export default function CodeFixClientPage() {
     const { left, top, width, height } = card.getBoundingClientRect();
     const x = e.clientX - left - width / 2;
     const y = e.clientY - top - height / 2;
-    const rotateX = (y / height) * -5; // Reduced intensity
-    const rotateY = (x / width) * 5; // Reduced intensity
+    const rotateX = (y / height) * -2; // Reduced intensity
+    const rotateY = (x / width) * 2; // Reduced intensity
     card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.01, 1.01, 1.01)`; // Reduced scale
   };
 
@@ -120,11 +128,14 @@ export default function CodeFixClientPage() {
   };
 
   const removeFile = (fileName: string) => {
-    setFiles(prev => prev.filter(f => f.name !== fileName));
-    if (selectedFile?.name === fileName) {
-      setAnalysisResult(null);
-      setSelectedFile(files.length > 1 ? files.find(f => f.name !== fileName) || null : null);
-    }
+    setFiles(prev => {
+      const remainingFiles = prev.filter(f => f.name !== fileName);
+      if (selectedFile?.name === fileName) {
+        setAnalysisResult(null);
+        setSelectedFile(remainingFiles.length > 0 ? remainingFiles[0] : null);
+      }
+      return remainingFiles;
+    });
   };
 
   const handleDrag = (e: DragEvent<HTMLDivElement>) => {
@@ -231,7 +242,7 @@ a.click();
                       onDragEnter={handleDrag}
                       onDragLeave={handleDrag}
                       onDragOver={handleDrag}
-                      onDrop={handleDrop}
+      onDrop={handleDrop}
                       onClick={onFileClick}
                     >
                       <input
@@ -362,7 +373,7 @@ a.click();
                         <CardTitle className="font-headline text-lg">Original Code ({selectedFile.name})</CardTitle>
                       </CardHeader>
                       <CardContent className="p-0">
-                        <SyntaxHighlighter language={selectedFile.language} style={atomOneDark} showLineNumbers customStyle={{ margin: 0, borderRadius: '0 0 0.5rem 0.5rem', maxHeight: '500px' }} codeTagProps={{ className: 'font-code' }}>
+                        <SyntaxHighlighter language={selectedFile.language} style={atomDark} showLineNumbers customStyle={{ margin: 0, borderRadius: '0 0 0.5rem 0.5rem', maxHeight: '500px' }} codeTagProps={{ className: 'font-code' }}>
                           {selectedFile.content}
                         </SyntaxHighlighter>
                       </CardContent>
@@ -375,7 +386,7 @@ a.click();
                          </Button>
                       </CardHeader>
                       <CardContent className="p-0">
-                        <SyntaxHighlighter language={selectedFile.language} style={atomOneDark} showLineNumbers customStyle={{ margin: 0, borderRadius: '0 0 0.5rem 0.5rem', maxHeight: '500px' }} codeTagProps={{ className: 'font-code' }}>
+                        <SyntaxHighlighter language={selectedFile.language} style={atomDark} showLineNumbers customStyle={{ margin: 0, borderRadius: '0 0 0.5rem 0.5rem', maxHeight: '500px' }} codeTagProps={{ className: 'font-code' }}>
                           {analysisResult.correctedCode}
                         </SyntaxHighlighter>
                       </CardContent>
