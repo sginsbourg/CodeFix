@@ -27,7 +27,7 @@ import { atomOneDark } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-type SupportedLanguage = 'python' | 'batch' | 'plaintext';
+type SupportedLanguage = 'python' | 'batch' | 'plaintext' | 'markdown';
 
 type UploadedFile = {
   name: string;
@@ -67,6 +67,7 @@ export default function CodeFixClientPage() {
     const extension = name.split('.').pop()?.toLowerCase();
     if (extension === 'py') return 'python';
     if (extension === 'bat' || extension === 'cmd') return 'batch';
+    if (extension === 'md') return 'markdown';
     return 'plaintext';
   };
   
@@ -75,6 +76,7 @@ export default function CodeFixClientPage() {
       case 'python':
       case 'batch':
         return <FileCode2 className="h-6 w-6 text-primary" />;
+      case 'markdown':
       case 'plaintext':
         return <FileText className="h-6 w-6 text-muted-foreground" />;
       default:
@@ -237,7 +239,7 @@ a.click();
                         type="file"
                         className="hidden"
                         onChange={handleFileChange}
-                        accept=".py,.bat,.cmd,.txt"
+                        accept=".py,.bat,.cmd,.txt,.md"
                         multiple
                       />
                       <div className="text-center text-muted-foreground">
@@ -245,7 +247,7 @@ a.click();
                         <p className="mt-2 text-sm">
                           <span className="font-semibold text-primary">Click to upload</span> or drag and drop
                         </p>
-                        <p className="text-xs">Python, Batch, or Text files (up to 10)</p>
+                        <p className="text-xs">Python, Batch, Text, or Markdown files (up to 10)</p>
                       </div>
                     </div>
                   </div>
