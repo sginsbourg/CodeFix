@@ -10,7 +10,7 @@ To get started with CodeFix, simply open the application in your browser. The ma
 
 ### 1. Upload Your Code Files
 
-- Click on the "Click to upload" area or drag and drop your code files (`.py`, `.bat`, `.cmd`, `.txt`, `.md`) into the designated zone.
+- Click on the "Click to upload" area or drag and drop your code files (`.js`, `.ts`, `.py`, `.bat`, `.cmd`, `.txt`, `.md`) into the designated zone.
 - You can upload up to 10 files for analysis.
 - Your uploaded files will appear in a list. You can click on a file to view its content or remove it by clicking the 'X' icon.
 
@@ -116,3 +116,5 @@ npm run genkit:dev
 ```
 
 Once both servers are running, you can open your browser and navigate to `http://localhost:9002` to use the CodeFix application.
+
+    

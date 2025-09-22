@@ -28,6 +28,8 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import python from 'react-syntax-highlighter/dist/esm/languages/prism/python';
 import batch from 'react-syntax-highlighter/dist/esm/languages/prism/batch';
 import markdown from 'react-syntax-highlighter/dist/esm/languages/prism/markdown';
+import javascript from 'react-syntax-highlighter/dist/esm/languages/prism/javascript';
+import typescript from 'react-syntax-highlighter/dist/esm/languages/prism/typescript';
 import { Checkbox } from '@/components/ui/checkbox';
 
 
@@ -37,8 +39,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 SyntaxHighlighter.registerLanguage('python', python);
 SyntaxHighlighter.registerLanguage('batch', batch);
 SyntaxHighlighter.registerLanguage('markdown', markdown);
+SyntaxHighlighter.registerLanguage('javascript', javascript);
+SyntaxHighlighter.registerLanguage('typescript', typescript);
 
-type SupportedLanguage = 'python' | 'batch' | 'plaintext' | 'markdown';
+type SupportedLanguage = 'python' | 'batch' | 'plaintext' | 'markdown' | 'javascript' | 'typescript';
 
 type UploadedFile = {
   name: string;
@@ -177,6 +181,8 @@ export default function CodeFixClientPage({ version }: { version: string }) {
     if (extension === 'py') return 'python';
     if (extension === 'bat' || extension === 'cmd') return 'batch';
     if (extension === 'md') return 'markdown';
+    if (extension === 'js' || extension === 'jsx') return 'javascript';
+    if (extension === 'ts' || extension === 'tsx') return 'typescript';
     return 'plaintext';
   };
   
@@ -184,6 +190,8 @@ export default function CodeFixClientPage({ version }: { version: string }) {
     switch (lang) {
       case 'python':
       case 'batch':
+      case 'javascript':
+      case 'typescript':
         return <FileCode2 className="h-6 w-6 text-primary" />;
       case 'markdown':
       case 'plaintext':
@@ -431,7 +439,7 @@ export default function CodeFixClientPage({ version }: { version: string }) {
                         type="file"
                         className="hidden"
                         onChange={handleFileChange}
-                        accept=".py,.bat,.cmd,.txt,.md"
+                        accept=".py,.bat,.cmd,.txt,.md,.js,.ts,.jsx,.tsx"
                         multiple
                       />
                       <div className="text-center text-muted-foreground">
@@ -439,7 +447,7 @@ export default function CodeFixClientPage({ version }: { version: string }) {
                         <p className="mt-2 text-sm">
                           <span className="font-semibold text-primary">Click to upload</span> or drag and drop
                         </p>
-                        <p className="text-xs">Python, Batch, Text, or Markdown files (up to 10)</p>
+                        <p className="text-xs">JS, TS, Python, Batch, Text, or MD files (up to 10)</p>
                       </div>
                     </div>
                   </div>
@@ -711,3 +719,5 @@ export default function CodeFixClientPage({ version }: { version: string }) {
     </div>
   );
 }
+
+    
