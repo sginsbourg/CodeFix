@@ -15,7 +15,8 @@ import {
 } from '@/ai/types/generate-readme-types';
 
 export async function generateReadme(input: GenerateReadmeInput): Promise<GenerateReadmeOutput> {
-  return generateReadmeFlow(input);
+  const validatedInput = GenerateReadmeInputSchema.parse(input);
+  return generateReadmeFlow(validatedInput);
 }
 
 const prompt = ai.definePrompt({
@@ -29,7 +30,7 @@ You will be given a set of code files from a project. Your task is to generate a
 The README should include the following sections:
 - A clear and concise project title and description.
 - How to get started with the project (e.g., installation, configuration).
-- How to use the project.
+- How to use the.
 - An overview of the project structure and key files.
 
 Analyze the provided files to understand the project's purpose, technologies used, and how it works.

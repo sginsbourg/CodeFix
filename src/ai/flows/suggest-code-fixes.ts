@@ -16,7 +16,8 @@ import {
 
 
 export async function suggestCodeFixes(input: SuggestCodeFixesInput): Promise<SuggestCodeFixesOutput> {
-  return suggestCodeFixesFlow(input);
+  const validatedInput = SuggestCodeFixesInputSchema.parse(input);
+  return suggestCodeFixesFlow(validatedInput);
 }
 
 const prompt = ai.definePrompt({
