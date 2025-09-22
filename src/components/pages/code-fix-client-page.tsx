@@ -22,11 +22,13 @@ import { useToast } from '@/hooks/use-toast';
 import { fixCodeAction } from '@/app/actions';
 import type { SuggestCodeFixesOutput } from '@/ai/flows/suggest-code-fixes';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
+import SyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism';
 import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import python from 'react-syntax-highlighter/dist/esm/languages/prism/python';
 import batch from 'react-syntax-highlighter/dist/esm/languages/prism/batch';
 import markdown from 'react-syntax-highlighter/dist/esm/languages/prism/markdown';
+import JSZip from 'jszip';
+
 
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -42,6 +44,11 @@ type UploadedFile = {
   content: string;
   language: SupportedLanguage;
 };
+
+type CorrectedFile = {
+  name: string;
+  correctedCode: string;
+}
 
 export default function CodeFixClientPage() {
   const { toast } = useToast();
@@ -162,8 +169,8 @@ export default function CodeFixClientPage() {
   };
 
   const handleSubmit = async () => {
-    if (!selectedFile) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Please select a code file to fix.' });
+    if (files.length === 0) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Please upload at least one code file.' });
       return;
     }
     if (!errorMessage) {
@@ -173,30 +180,55 @@ export default function CodeFixClientPage() {
 
     setIsLoading(true);
     setAnalysisResult(null);
-    const result = await fixCodeAction({ code: selectedFile.content, errorMessage });
+    const result = await fixCodeAction({ files: files.map(f => ({name: f.name, content: f.content})), errorMessage });
     setIsLoading(false);
 
     if (result.error) {
       toast({ variant: 'destructive', title: 'Analysis Error', description: result.error });
     } else if (result.data) {
       setAnalysisResult(result.data);
+      // If there are corrected files, select the first one to display.
+      if (result.data.correctedFiles.length > 0) {
+        const firstCorrectedFile = files.find(f => f.name === result.data.correctedFiles[0].name);
+        if (firstCorrectedFile) {
+          setSelectedFile(firstCorrectedFile);
+        }
+      }
       toast({ title: 'Success', description: 'Code analysis complete!' });
     }
   };
 
-  const handleDownload = () => {
-    if (!analysisResult?.correctedCode || !selectedFile) return;
-    const blob = new Blob([analysisResult.correctedCode], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const [name, ...extParts] = selectedFile.name.split('.');
-    const extension = extParts.join('.');
-    a.href = url;
-    a.download = extension ? `${name}.fixed.${extension}` : `${name}.fixed.txt`;
-    document.body.appendChild(a);
-a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const handleDownload = async () => {
+    if (!analysisResult || analysisResult.correctedFiles.length === 0) return;
+  
+    if (analysisResult.correctedFiles.length === 1) {
+      // Download single file
+      const correctedFile = analysisResult.correctedFiles[0];
+      const blob = new Blob([correctedFile.correctedCode], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = correctedFile.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } else {
+      // Download zip file
+      const zip = new JSZip();
+      analysisResult.correctedFiles.forEach(file => {
+        zip.file(file.name, file.correctedCode);
+      });
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'fixed-files.zip';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
   };
   
   const clearAllFiles = () => {
@@ -204,6 +236,14 @@ a.click();
     setSelectedFile(null);
     setAnalysisResult(null);
   }
+
+  const getCorrectedCodeForFile = (fileName: string | undefined): string | null => {
+    if (!fileName || !analysisResult) return null;
+    const correctedFile = analysisResult.correctedFiles.find(f => f.name === fileName);
+    return correctedFile?.correctedCode ?? null;
+  }
+  
+  const correctedFileForSelected = selectedFile ? getCorrectedCodeForFile(selectedFile.name) : null;
 
   return (
     <div className="min-h-screen bg-grid p-4 sm:p-6 md:p-8">
@@ -281,7 +321,7 @@ a.click();
                               "flex items-center justify-between p-2 rounded-md cursor-pointer",
                               selectedFile?.name === file.name ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'
                             )}
-                            onClick={() => { setSelectedFile(file); setAnalysisResult(null); }}
+                            onClick={() => { setSelectedFile(file); }}
                           >
                             <div className="flex items-center gap-2 truncate">
                               {getFileIcon(file.language)}
@@ -328,7 +368,7 @@ a.click();
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-                  <Button onClick={handleSubmit} disabled={isLoading || !selectedFile}>
+                  <Button onClick={handleSubmit} disabled={isLoading || files.length === 0}>
                     {isLoading ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
@@ -381,14 +421,23 @@ a.click();
                     <Card>
                       <CardHeader className="flex flex-row items-center justify-between">
                         <CardTitle className="font-headline text-lg">Corrected Code</CardTitle>
+                        {analysisResult.correctedFiles.length > 0 && (
                          <Button size="sm" variant="secondary" onClick={handleDownload}>
-                           <Download className="mr-2 h-4 w-4" /> Download
+                           <Download className="mr-2 h-4 w-4" /> 
+                           Download {analysisResult.correctedFiles.length > 1 ? 'All' : ''}
                          </Button>
+                        )}
                       </CardHeader>
                       <CardContent className="p-0">
-                        <SyntaxHighlighter language={selectedFile.language} style={atomDark} showLineNumbers customStyle={{ margin: 0, borderRadius: '0 0 0.5rem 0.5rem', maxHeight: '500px' }} codeTagProps={{ className: 'font-code' }}>
-                          {analysisResult.correctedCode}
-                        </SyntaxHighlighter>
+                        {correctedFileForSelected ? (
+                          <SyntaxHighlighter language={selectedFile.language} style={atomDark} showLineNumbers customStyle={{ margin: 0, borderRadius: '0 0 0.5rem 0.5rem', maxHeight: '500px' }} codeTagProps={{ className: 'font-code' }}>
+                            {correctedFileForSelected}
+                          </SyntaxHighlighter>
+                        ) : (
+                          <div className="flex items-center justify-center h-full p-6 text-center text-muted-foreground rounded-b-lg bg-muted/20">
+                            <p>No changes suggested for this file.</p>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   </div>
