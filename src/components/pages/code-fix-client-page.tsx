@@ -49,21 +49,26 @@ type CorrectedFile = {
   correctedCode: string;
 }
 
-const getInitialState = (key: string, defaultValue: boolean): boolean => {
+const getInitialState = <T,>(key: string, defaultValue: T): T => {
   if (typeof window === 'undefined') {
     return defaultValue;
   }
-  const storedValue = localStorage.getItem(key);
-  return storedValue !== null ? JSON.parse(storedValue) : defaultValue;
+  try {
+    const storedValue = localStorage.getItem(key);
+    return storedValue !== null ? JSON.parse(storedValue) : defaultValue;
+  } catch (error) {
+    console.error(`Error reading from localStorage for key "${key}":`, error);
+    return defaultValue;
+  }
 };
 
 
 export default function CodeFixClientPage() {
   const { toast } = useToast();
-  const [files, setFiles] = useState<UploadedFile[]>([]);
-  const [selectedFile, setSelectedFile] = useState<UploadedFile | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string>('');
-  const [analysisResult, setAnalysisResult] = useState<SuggestCodeFixesOutput | null>(null);
+  const [files, setFiles] = useState<UploadedFile[]>(() => getInitialState('files', []));
+  const [selectedFile, setSelectedFile] = useState<UploadedFile | null>(() => getInitialState('selectedFile', null));
+  const [errorMessage, setErrorMessage] = useState<string>(() => getInitialState('errorMessage', ''));
+  const [analysisResult, setAnalysisResult] = useState<SuggestCodeFixesOutput | null>(() => getInitialState('analysisResult', null));
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [dragActive, setDragActive] = useState<boolean>(false);
   
@@ -73,10 +78,30 @@ export default function CodeFixClientPage() {
   const [enhanceUserMessages, setEnhanceUserMessages] = useState<boolean>(() => getInitialState('enhanceUserMessages', true));
 
   const [isGeneratingReadme, setIsGeneratingReadme] = useState<boolean>(false);
-  const [generatedReadme, setGeneratedReadme] = useState<string | null>(null);
+  const [generatedReadme, setGeneratedReadme] = useState<string | null>(() => getInitialState('generatedReadme', null));
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    localStorage.setItem('files', JSON.stringify(files));
+  }, [files]);
+  
+  useEffect(() => {
+    localStorage.setItem('selectedFile', JSON.stringify(selectedFile));
+  }, [selectedFile]);
+
+  useEffect(() => {
+    localStorage.setItem('errorMessage', JSON.stringify(errorMessage));
+  }, [errorMessage]);
+
+  useEffect(() => {
+    localStorage.setItem('analysisResult', JSON.stringify(analysisResult));
+  }, [analysisResult]);
+
+  useEffect(() => {
+    localStorage.setItem('generatedReadme', JSON.stringify(generatedReadme));
+  }, [generatedReadme]);
 
   useEffect(() => {
     localStorage.setItem('fixError', JSON.stringify(fixError));
@@ -281,6 +306,13 @@ export default function CodeFixClientPage() {
     setAnalysisResult(null);
     setGeneratedReadme(null);
     setErrorMessage('');
+    
+    // Clear relevant localStorage
+    localStorage.removeItem('files');
+    localStorage.removeItem('selectedFile');
+    localStorage.removeItem('errorMessage');
+    localStorage.removeItem('analysisResult');
+    localStorage.removeItem('generatedReadme');
   }
 
   const getCorrectedCodeForFile = (fileName: string | undefined): string | null => {
