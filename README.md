@@ -53,3 +53,66 @@ The results panel will show you:
 - **Review README:** Click the "Review README" button at any time to view the current `README.md` file of your project.
 - **Start a New Session:** Click the **Clear all** button to remove all uploaded files, error messages, and analysis results, allowing you to start fresh.
 - **Automatic Caching:** Your entire session (uploaded files, error message, results, and selections) is automatically saved in your browser. You can refresh the page or close the tab and resume your work later.
+
+## Local Development
+
+Follow these instructions to set up and run the project on your local machine for development and testing.
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) (version 20 or later recommended)
+- [npm](https://www.npmjs.com/) (usually comes with Node.js)
+- A Google AI API key. You can get one from [Google AI Studio](https://aistudio.google.com/app/apikey).
+
+### 1. Clone the Repository
+
+First, clone this repository to your local machine:
+
+```bash
+git clone <your-repository-url>
+cd <repository-directory>
+```
+
+### 2. Install Dependencies
+
+Install all the necessary project dependencies using npm:
+
+```bash
+npm install
+```
+
+### 3. Set Up Environment Variables
+
+The project uses Genkit and the Gemini API, which require an API key.
+
+1.  Create a new file named `.env` in the root of your project directory.
+2.  Copy the contents of the `.env.example` file into your new `.env` file.
+3.  Replace the placeholder with your actual Google AI API key:
+
+```
+GEMINI_API_KEY=your_google_ai_api_key_here
+```
+
+The application uses `dotenv` to automatically load this variable during development.
+
+### 4. Run the Application
+
+This project consists of two main parts that need to be run concurrently in separate terminals: the Next.js frontend application and the Genkit AI flows.
+
+**Terminal 1: Start the Next.js Development Server**
+
+This command starts the Next.js frontend on `http://localhost:9002`.
+
+```bash
+npm run dev
+```
+
+**Terminal 2: Start the Genkit Development Server**
+
+This command starts the Genkit development UI, which allows you to inspect and debug your AI flows. It typically runs on `http://localhost:4000`.
+
+```bash
+npm run genkit:dev
+```
+
+Once both servers are running, you can open your browser and navigate to `http://localhost:9002` to use the CodeFix application.
