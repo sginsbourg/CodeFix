@@ -2,19 +2,9 @@
 
 import { suggestCodeFixes } from '@/ai/flows/suggest-code-fixes';
 import { generateReadme } from '@/ai/flows/generate-readme';
-import { z } from 'zod';
 import type { GenerateReadmeInput, GenerateReadmeOutput } from '@/ai/types/generate-readme-types';
 import type { SuggestCodeFixesInput, SuggestCodeFixesOutput } from '@/ai/types/suggest-code-fixes-types';
-import {FileSchema} from '@/ai/types/shared-types';
-
-const ActionInputSchema = z.object({
-  files: z.array(FileSchema).min(1, 'At least one file is required.'),
-  errorMessage: z.string().min(1, 'Error message cannot be empty.'),
-  fixError: z.boolean(),
-  improveErrorHandling: z.boolean(),
-  addDebugging: z.boolean(),
-  enhanceUserMessages: z.boolean(),
-});
+import { ActionInputSchema, ReadmeActionInputSchema } from '@/ai/types/action-types';
 
 export async function fixCodeAction(input: SuggestCodeFixesInput): Promise<{ data: SuggestCodeFixesOutput | null; error: string | null }> {
   const validation = ActionInputSchema.safeParse(input);
@@ -35,10 +25,6 @@ export async function fixCodeAction(input: SuggestCodeFixesInput): Promise<{ dat
     return { data: null, error: 'An unexpected error occurred while analyzing the code.' };
   }
 }
-
-const ReadmeActionInputSchema = z.object({
-  files: z.array(FileSchema).min(1, 'At least one file is required.'),
-});
 
 export async function generateReadmeAction(input: GenerateReadmeInput): Promise<{ data: GenerateReadmeOutput | null; error: string | null }> {
   const validation = ReadmeActionInputSchema.safeParse(input);
