@@ -5,7 +5,6 @@ import {
   FileCode2,
   UploadCloud,
   Wand2,
-  Play,
   Download,
   Loader2,
   FileText,
@@ -17,7 +16,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { fixCodeAction } from '@/app/actions';
 import type { SuggestCodeFixesOutput } from '@/ai/flows/suggest-code-fixes';
@@ -354,20 +352,7 @@ export default function CodeFixClientPage() {
                     />
                   </div>
                 </CardContent>
-                <CardFooter className="flex justify-between">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="secondary" disabled>
-                          <Play className="mr-2 h-4 w-4" />
-                          Run File
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>File execution is not supported in this environment for security reasons.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                <CardFooter className="flex justify-end">
                   <Button onClick={handleSubmit} disabled={isLoading || files.length === 0}>
                     {isLoading ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -474,5 +459,3 @@ export default function CodeFixClientPage() {
     </div>
   );
 }
-
-    
