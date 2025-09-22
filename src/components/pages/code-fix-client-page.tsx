@@ -24,7 +24,7 @@ import { fixCodeAction, generateReadmeAction, getReadmeAction } from '@/app/acti
 import type { SuggestCodeFixesOutput } from '@/ai/types/suggest-code-fixes-types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PrismAsyncLight as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import python from 'react-syntax-highlighter/dist/esm/languages/prism/python';
 import batch from 'react-syntax-highlighter/dist/esm/languages/prism/batch';
 import markdown from 'react-syntax-highlighter/dist/esm/languages/prism/markdown';
@@ -389,9 +389,9 @@ export default function CodeFixClientPage({ version }: { version: string }) {
   return (
     <div className="min-h-screen bg-grid p-4 sm:p-6 md:p-8">
       <div className="mx-auto max-w-7xl rounded-lg border bg-card/80 shadow-2xl backdrop-blur-lg">
-        <main className="container mx-auto px-4 py-8 md:py-12">
-          <header className="text-center mb-12">
-            <h1 className="font-headline text-4xl md:text-5xl font-bold tracking-tight">
+        <main className="container mx-auto px-4 py-6 md:py-8">
+          <header className="text-center mb-10">
+            <h1 className="font-headline text-4xl md:text-5xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-primary via-primary/80 to-primary">
               CodeFix <span className="text-2xl text-muted-foreground font-light align-middle">v{version}</span>
             </h1>
             <p className="text-muted-foreground mt-2 text-lg">
@@ -622,7 +622,7 @@ export default function CodeFixClientPage({ version }: { version: string }) {
                               <CardTitle className="font-headline text-lg">Original Code ({selectedFile.name})</CardTitle>
                             </CardHeader>
                             <CardContent className="p-0">
-                              <SyntaxHighlighter language={selectedFile.language} style={atomDark} showLineNumbers customStyle={{ margin: 0, borderRadius: '0 0 0.5rem 0.5rem', maxHeight: '500px' }} codeTagProps={{ className: 'font-code' }}>
+                              <SyntaxHighlighter language={selectedFile.language} style={vscDarkPlus} showLineNumbers customStyle={{ margin: 0, borderRadius: '0 0 0.5rem 0.5rem', maxHeight: '500px' }} codeTagProps={{ className: 'font-code' }}>
                                 {selectedFile.content}
                               </SyntaxHighlighter>
                             </CardContent>
@@ -633,7 +633,7 @@ export default function CodeFixClientPage({ version }: { version: string }) {
                             </CardHeader>
                             <CardContent className="p-0">
                               {correctedFileForSelected ? (
-                                <SyntaxHighlighter language={selectedFile.language} style={atomDark} showLineNumbers customStyle={{ margin: 0, borderRadius: '0 0 0.5rem 0.5rem', maxHeight: '500px' }} codeTagProps={{ className: 'font-code' }}>
+                                <SyntaxHighlighter language={selectedFile.language} style={vscDarkPlus} showLineNumbers customStyle={{ margin: 0, borderRadius: '0 0 0.5rem 0.5rem', maxHeight: '500px' }} codeTagProps={{ className: 'font-code' }}>
                                   {correctedFileForSelected}
                                 </SyntaxHighlighter>
                               ) : (
