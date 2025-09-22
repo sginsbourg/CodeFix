@@ -11,6 +11,10 @@ const FileSchema = z.object({
 const ActionInputSchema = z.object({
   files: z.array(FileSchema).min(1, 'At least one file is required.'),
   errorMessage: z.string().min(1, 'Error message cannot be empty.'),
+  fixError: z.boolean(),
+  improveErrorHandling: z.boolean(),
+  addDebugging: z.boolean(),
+  enhanceUserMessages: z.boolean(),
 });
 
 export async function fixCodeAction(input: SuggestCodeFixesInput): Promise<{ data: SuggestCodeFixesOutput | null; error: string | null }> {

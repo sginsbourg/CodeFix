@@ -19,6 +19,10 @@ const FileSchema = z.object({
 const SuggestCodeFixesInputSchema = z.object({
   files: z.array(FileSchema).describe('The code files to be analyzed.'),
   errorMessage: z.string().describe('The error message associated with the code.'),
+  fixError: z.boolean().describe('Whether to fix the error.'),
+  improveErrorHandling: z.boolean().describe('Whether to improve error handling.'),
+  addDebugging: z.boolean().describe('Whether to add debugging capabilities.'),
+  enhanceUserMessages: z.boolean().describe('Whether to enhance user messages.'),
 });
 export type SuggestCodeFixesInput = z.infer<typeof SuggestCodeFixesInputSchema>;
 
@@ -43,17 +47,25 @@ const prompt = ai.definePrompt({
   output: {schema: SuggestCodeFixesOutputSchema},
   prompt: `You are an AI code assistant that helps developers fix and improve code.
 
-You will be given a set of code files and an error message.
-Your primary task is to fix the error.
-Beyond just fixing the bug, you must also proactively improve the code by:
-1.  **Improving User Messages:** Refine any user-facing text (e.g., toast notifications, alerts, logs) to be clearer, more helpful, and more professional.
-2.  **Enhancing Debugging:** Add or improve logging to make future debugging easier.
-3.  **Bolstering Error Handling:** Implement more robust error handling (e.g., try-catch blocks, checking for null/undefined values) where appropriate.
+You will be given a set of code files, an error message, and a set of instructions on what to do.
+Based on the user's request, you will perform one or more of the following tasks:
+{{#if fixError}}
+- **Fix the Error:** Analyze the error message and the code to identify the root cause and apply a correction.
+{{/if}}
+{{#if improveErrorHandling}}
+- **Improve Error Handling:** Implement more robust error handling (e.g., try-catch blocks, checking for null/undefined values) where appropriate.
+{{/if}}
+{{#if addDebugging}}
+- **Enhance Debugging:** Add or improve logging to make future debugging easier.
+{{/if}}
+{{#if enhanceUserMessages}}
+- **Improve User Messages:** Refine any user-facing text (e.g., toast notifications, alerts, logs) to be clearer, more helpful, and more professional.
+{{/if}}
 
 It's possible the issue spans multiple files. You might need to modify one or several files.
 Only return files that require correction or improvement. Do not include unchanged files in your response.
 
-Respond with the corrected code for each file and a single, comprehensive explanation covering all the changes you made, including the bug fix and the improvements.
+Respond with the corrected code for each file and a single, comprehensive explanation covering all the changes you made based on the requested tasks.
 
 Error Message:
 {{errorMessage}}

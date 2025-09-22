@@ -25,6 +25,7 @@ import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import python from 'react-syntax-highlighter/dist/esm/languages/prism/python';
 import batch from 'react-syntax-highlighter/dist/esm/languages/prism/batch';
 import markdown from 'react-syntax-highlighter/dist/esm/languages/prism/markdown';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 import { cn } from '@/lib/utils';
@@ -55,6 +56,10 @@ export default function CodeFixClientPage() {
   const [analysisResult, setAnalysisResult] = useState<SuggestCodeFixesOutput | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [dragActive, setDragActive] = useState<boolean>(false);
+  const [fixError, setFixError] = useState(true);
+  const [improveErrorHandling, setImproveErrorHandling] = useState(true);
+  const [addDebugging, setAddDebugging] = useState(true);
+  const [enhanceUserMessages, setEnhanceUserMessages] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -177,7 +182,14 @@ export default function CodeFixClientPage() {
 
     setIsLoading(true);
     setAnalysisResult(null);
-    const result = await fixCodeAction({ files: files.map(f => ({name: f.name, content: f.content})), errorMessage });
+    const result = await fixCodeAction({
+      files: files.map(f => ({name: f.name, content: f.content})),
+      errorMessage,
+      fixError,
+      improveErrorHandling,
+      addDebugging,
+      enhanceUserMessages,
+    });
     setIsLoading(false);
 
     if (result.error) {
@@ -244,7 +256,7 @@ export default function CodeFixClientPage() {
               <Card className="w-full h-full backface-hidden">
                 <CardHeader>
                   <CardTitle className="font-headline text-2xl">Input</CardTitle>
-                  <CardDescription>Upload files and paste the error message.</CardDescription>
+                  <CardDescription>Upload files, paste the error, and select your desired improvements.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
@@ -328,6 +340,28 @@ export default function CodeFixClientPage() {
                       onChange={(e) => setErrorMessage(e.target.value)}
                       disabled={files.length === 0}
                     />
+                  </div>
+
+                  <div className="space-y-4">
+                      <Label>AI Improvements</Label>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox id="fix-error" checked={fixError} onCheckedChange={(checked) => setFixError(Boolean(checked))} />
+                          <Label htmlFor="fix-error" className="text-sm font-normal">Fix error</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox id="improve-error-handling" checked={improveErrorHandling} onCheckedChange={(checked) => setImproveErrorHandling(Boolean(checked))} />
+                          <Label htmlFor="improve-error-handling" className="text-sm font-normal">Improve error handling</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox id="add-debugging" checked={addDebugging} onCheckedChange={(checked) => setAddDebugging(Boolean(checked))} />
+                          <Label htmlFor="add-debugging" className="text-sm font-normal">Increase debugging</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox id="enhance-user-messages" checked={enhanceUserMessages} onCheckedChange={(checked) => setEnhanceUserMessages(Boolean(checked))} />
+                          <Label htmlFor="enhance-user-messages" className="text-sm font-normal">Enhance user messages</Label>
+                        </div>
+                      </div>
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-end">
