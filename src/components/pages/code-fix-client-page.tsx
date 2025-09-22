@@ -36,6 +36,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 SyntaxHighlighter.registerLanguage('python', python);
 SyntaxHighlighter.registerLanguage('batch', batch);
@@ -396,6 +397,7 @@ export default function CodeFixClientPage({ version }: { version: string }) {
   const correctedFileForSelected = selectedFile ? getCorrectedCodeForFile(selectedFile.name) : null;
 
   return (
+    <TooltipProvider>
     <div className="min-h-screen bg-grid p-4 sm:p-6 md:p-8">
       <div className="mx-auto max-w-7xl rounded-lg border bg-card/80 shadow-2xl backdrop-blur-lg">
         <main className="container mx-auto px-4 py-6 md:py-8">
@@ -407,12 +409,17 @@ export default function CodeFixClientPage({ version }: { version: string }) {
               Your AI-powered assistant for debugging code.
             </p>
             <div className="absolute top-0 right-0">
-              <a href="https://github.com/sginsbourg/CodeFix" target="_blank" rel="noopener noreferrer">
-                <Button variant="outline" size="icon">
-                  <Github className="h-5 w-5" />
-                  <span className="sr-only">GitHub</span>
-                </Button>
-              </a>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <a href="https://github.com/sginsbourg/CodeFix" target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" size="icon">
+                      <Github className="h-5 w-5" />
+                      <span className="sr-only">GitHub</span>
+                    </Button>
+                  </a>
+                </TooltipTrigger>
+                <TooltipContent>View on GitHub</TooltipContent>
+              </Tooltip>
             </div>
           </header>
 
@@ -465,10 +472,15 @@ export default function CodeFixClientPage({ version }: { version: string }) {
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
                         <Label>Uploaded Files</Label>
-                        <Button variant="ghost" size="sm" onClick={clearAllFiles}>
-                          <Trash2 className="mr-2 h-4 w-4"/>
-                          Clear all
-                        </Button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="sm" onClick={clearAllFiles}>
+                              <Trash2 className="mr-2 h-4 w-4"/>
+                              Clear all
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Clear all uploaded files and session data</TooltipContent>
+                        </Tooltip>
                       </div>
                       <ScrollArea className="h-48 rounded-md border">
                         <div className="p-2 space-y-2">
@@ -485,14 +497,19 @@ export default function CodeFixClientPage({ version }: { version: string }) {
                               {getFileIcon(file.language)}
                               <span className="truncate text-sm">{file.name}</span>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6"
-                              onClick={(e) => { e.stopPropagation(); removeFile(file.name); }}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6"
+                                  onClick={(e) => { e.stopPropagation(); removeFile(file.name); }}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Remove this file</TooltipContent>
+                            </Tooltip>
                           </div>
                         ))}
                         </div>
@@ -503,10 +520,15 @@ export default function CodeFixClientPage({ version }: { version: string }) {
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <Label htmlFor="error-message">Error Message</Label>
-                      <Button variant="outline" size="sm" onClick={handlePasteFromClipboard} disabled={files.length === 0}>
-                        <ClipboardPaste className="mr-2 h-4 w-4"/>
-                        Paste from Clipboard
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="outline" size="sm" onClick={handlePasteFromClipboard} disabled={files.length === 0}>
+                            <ClipboardPaste className="mr-2 h-4 w-4"/>
+                            Paste from Clipboard
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Paste error message from your clipboard</TooltipContent>
+                      </Tooltip>
                     </div>
                     <Textarea
                       id="error-message"
@@ -541,22 +563,32 @@ export default function CodeFixClientPage({ version }: { version: string }) {
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-between items-center">
-                  <Button variant="outline" onClick={handleReviewReadme} disabled={isReviewingReadme}>
-                    {isReviewingReadme ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Eye className="mr-2 h-4 w-4" />
-                      )}
-                      Review README
-                  </Button>
-                  <Button onClick={handleSubmit} disabled={isLoading || files.length === 0}>
-                    {isLoading ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Wand2 className="mr-2 h-4 w-4" />
-                    )}
-                    Fix Code
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="outline" onClick={handleReviewReadme} disabled={isReviewingReadme}>
+                        {isReviewingReadme ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Eye className="mr-2 h-4 w-4" />
+                          )}
+                          Review README
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>View the project's current README.md file</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button onClick={handleSubmit} disabled={isLoading || files.length === 0}>
+                        {isLoading ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Wand2 className="mr-2 h-4 w-4" />
+                        )}
+                        Fix Code
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Analyze files and generate code fixes</TooltipContent>
+                  </Tooltip>
                 </CardFooter>
               </Card>
             </div>
@@ -622,10 +654,15 @@ export default function CodeFixClientPage({ version }: { version: string }) {
                             {analysisResult.correctedFiles.map(file => (
                               <div key={file.name} className="flex items-center justify-between p-2 rounded-md bg-muted/30">
                                 <span className="font-code text-sm">{file.name}</span>
-                                <Button size="sm" variant="secondary" onClick={() => handleDownload(file.correctedCode, file.name)}>
-                                  <Download className="mr-2 h-4 w-4" />
-                                  Download
-                                </Button>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button size="sm" variant="secondary" onClick={() => handleDownload(file.correctedCode, file.name)}>
+                                      <Download className="mr-2 h-4 w-4" />
+                                      Download
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Download corrected version of {file.name}</TooltipContent>
+                                </Tooltip>
                               </div>
                             ))}
                           </CardContent>
@@ -669,14 +706,19 @@ export default function CodeFixClientPage({ version }: { version: string }) {
                           <CardDescription>Create a README.md file for your project based on the latest code.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                          <Button onClick={handleGenerateReadme} disabled={isGeneratingReadme}>
-                            {isGeneratingReadme ? (
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                              <BookMarked className="mr-2 h-4 w-4" />
-                            )}
-                            Generate README.md
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button onClick={handleGenerateReadme} disabled={isGeneratingReadme}>
+                                {isGeneratingReadme ? (
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                  <BookMarked className="mr-2 h-4 w-4" />
+                                )}
+                                Generate README.md
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Generate a new README.md based on the corrected code</TooltipContent>
+                          </Tooltip>
                           {isGeneratingReadme && (
                             <div className="mt-4 space-y-2">
                               <Skeleton className="h-4 w-3/4" />
@@ -694,10 +736,15 @@ export default function CodeFixClientPage({ version }: { version: string }) {
                         </CardContent>
                         {generatedReadme && (
                             <CardFooter>
-                                <Button variant="secondary" onClick={() => handleDownload(generatedReadme, 'README.md')}>
-                                    <Download className="mr-2 h-4 w-4" />
-                                    Download README.md
-                                </Button>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="secondary" onClick={() => handleDownload(generatedReadme, 'README.md')}>
+                                      <Download className="mr-2 h-4 w-4" />
+                                      Download README.md
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Download the generated README.md file</TooltipContent>
+                              </Tooltip>
                             </CardFooter>
                         )}
                       </Card>
@@ -726,5 +773,6 @@ export default function CodeFixClientPage({ version }: { version: string }) {
         </main>
       </div>
     </div>
+    </TooltipProvider>
   );
 }
