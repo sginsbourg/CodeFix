@@ -41,15 +41,19 @@ const prompt = ai.definePrompt({
   name: 'suggestCodeFixesPrompt',
   input: {schema: SuggestCodeFixesInputSchema},
   output: {schema: SuggestCodeFixesOutputSchema},
-  prompt: `You are an AI code assistant that helps developers fix code.
+  prompt: `You are an AI code assistant that helps developers fix and improve code.
 
 You will be given a set of code files and an error message.
-Your task is to analyze the code and the error message, and suggest corrections to the code.
-It's possible the error is caused by an issue spanning multiple files.
-The error might only require fixing one file, or it could require fixing multiple files.
-Only return the files that need to be corrected. For any files that are correct and do not need changes, do not include them in the response.
+Your primary task is to fix the error.
+Beyond just fixing the bug, you must also proactively improve the code by:
+1.  **Improving User Messages:** Refine any user-facing text (e.g., toast notifications, alerts, logs) to be clearer, more helpful, and more professional.
+2.  **Enhancing Debugging:** Add or improve logging to make future debugging easier.
+3.  **Bolstering Error Handling:** Implement more robust error handling (e.g., try-catch blocks, checking for null/undefined values) where appropriate.
 
-Respond with the corrected code for each file and a single explanation covering all the changes you made.
+It's possible the issue spans multiple files. You might need to modify one or several files.
+Only return files that require correction or improvement. Do not include unchanged files in your response.
+
+Respond with the corrected code for each file and a single, comprehensive explanation covering all the changes you made, including the bug fix and the improvements.
 
 Error Message:
 {{errorMessage}}
