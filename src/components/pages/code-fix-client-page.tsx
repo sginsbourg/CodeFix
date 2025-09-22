@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, type DragEvent, ChangeEvent } from 'react';
+import { useState, useRef, type DragEvent, ChangeEvent, MouseEvent } from 'react';
 import {
   FileCode2,
   UploadCloud,
@@ -44,6 +44,24 @@ export default function CodeFixClientPage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [dragActive, setDragActive] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
+    const card = cardRef.current;
+    if (!card) return;
+    const { left, top, width, height } = card.getBoundingClientRect();
+    const x = e.clientX - left - width / 2;
+    const y = e.clientY - top - height / 2;
+    const rotateX = (y / height) * -30;
+    const rotateY = (x / width) * 30;
+    card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`;
+  };
+
+  const handleMouseLeave = () => {
+    const card = cardRef.current;
+    if (!card) return;
+    card.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+  };
 
   const getLanguageFromFileName = (name: string): SupportedLanguage => {
     const extension = name.split('.').pop()?.toLowerCase();
@@ -94,7 +112,6 @@ export default function CodeFixClientPage() {
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     handleFiles(e.target.files);
-    // Reset file input to allow uploading the same file again
     if(fileInputRef.current) {
         fileInputRef.current.value = '';
     }
@@ -176,7 +193,7 @@ export default function CodeFixClientPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-grid">
       <main className="container mx-auto px-4 py-8 md:py-12">
         <header className="text-center mb-12">
           <h1 className="font-headline text-4xl md:text-5xl font-bold tracking-tight">
@@ -187,120 +204,128 @@ export default function CodeFixClientPage() {
           </p>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-          <Card className="sticky top-8">
-            <CardHeader>
-              <CardTitle className="font-headline text-2xl">Input</CardTitle>
-              <CardDescription>Upload files and paste the error message.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="file-upload">Code Files</Label>
-                 <div
-                  id="file-upload"
-                  className={cn(
-                    'relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted transition-colors',
-                    dragActive ? 'border-primary bg-accent/20' : 'border-border'
-                  )}
-                  onDragEnter={handleDrag}
-                  onDragLeave={handleDrag}
-                  onDragOver={handleDrag}
-                  onDrop={handleDrop}
-                  onClick={onFileClick}
-                >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    className="hidden"
-                    onChange={handleFileChange}
-                    accept=".py,.bat,.cmd,.txt"
-                    multiple
-                  />
-                  <div className="text-center text-muted-foreground">
-                    <UploadCloud className="mx-auto h-8 w-8" />
-                    <p className="mt-2 text-sm">
-                      <span className="font-semibold text-primary">Click to upload</span> or drag and drop
-                    </p>
-                    <p className="text-xs">Python, Batch, or Text files (up to 10)</p>
-                  </div>
-                </div>
-              </div>
-
-               {files.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start perspective">
+          <div
+            ref={cardRef}
+            className="sticky top-8 transform-style-3d transition-transform duration-300"
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+          >
+            <Card className="w-full h-full backface-hidden">
+              <CardHeader>
+                <CardTitle className="font-headline text-2xl">Input</CardTitle>
+                <CardDescription>Upload files and paste the error message.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <Label>Uploaded Files</Label>
-                    <Button variant="ghost" size="sm" onClick={clearAllFiles}>
-                      <Trash2 className="mr-2 h-4 w-4"/>
-                      Clear all
-                    </Button>
-                  </div>
-                  <ScrollArea className="h-48 rounded-md border">
-                    <div className="p-2 space-y-2">
-                    {files.map((file) => (
-                      <div
-                        key={file.name}
-                        className={cn(
-                          "flex items-center justify-between p-2 rounded-md cursor-pointer",
-                          selectedFile?.name === file.name ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'
-                        )}
-                        onClick={() => { setSelectedFile(file); setAnalysisResult(null); }}
-                      >
-                        <div className="flex items-center gap-2 truncate">
-                          {getFileIcon(file.language)}
-                          <span className="truncate text-sm">{file.name}</span>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={(e) => { e.stopPropagation(); removeFile(file.name); }}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
+                  <Label htmlFor="file-upload">Code Files</Label>
+                  <div
+                    id="file-upload"
+                    className={cn(
+                      'relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted transition-colors',
+                      dragActive ? 'border-primary bg-accent/20' : 'border-border'
+                    )}
+                    onDragEnter={handleDrag}
+                    onDragLeave={handleDrag}
+                    onDragOver={handleDrag}
+                    onDrop={handleDrop}
+                    onClick={onFileClick}
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      className="hidden"
+                      onChange={handleFileChange}
+                      accept=".py,.bat,.cmd,.txt"
+                      multiple
+                    />
+                    <div className="text-center text-muted-foreground">
+                      <UploadCloud className="mx-auto h-8 w-8" />
+                      <p className="mt-2 text-sm">
+                        <span className="font-semibold text-primary">Click to upload</span> or drag and drop
+                      </p>
+                      <p className="text-xs">Python, Batch, or Text files (up to 10)</p>
                     </div>
-                  </ScrollArea>
+                  </div>
                 </div>
-              )}
 
-              <div className="space-y-2">
-                <Label htmlFor="error-message">Error Message</Label>
-                <Textarea
-                  id="error-message"
-                  placeholder="Paste your error message here..."
-                  className="min-h-[120px] font-code text-sm"
-                  value={errorMessage}
-                  onChange={(e) => setErrorMessage(e.target.value)}
-                  disabled={files.length === 0}
-                />
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="secondary" disabled>
-                      <Play className="mr-2 h-4 w-4" />
-                      Run File
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>File execution is not supported in this environment for security reasons.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <Button onClick={handleSubmit} disabled={isLoading || !selectedFile}>
-                {isLoading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Wand2 className="mr-2 h-4 w-4" />
+                {files.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <Label>Uploaded Files</Label>
+                      <Button variant="ghost" size="sm" onClick={clearAllFiles}>
+                        <Trash2 className="mr-2 h-4 w-4"/>
+                        Clear all
+                      </Button>
+                    </div>
+                    <ScrollArea className="h-48 rounded-md border">
+                      <div className="p-2 space-y-2">
+                      {files.map((file) => (
+                        <div
+                          key={file.name}
+                          className={cn(
+                            "flex items-center justify-between p-2 rounded-md cursor-pointer",
+                            selectedFile?.name === file.name ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'
+                          )}
+                          onClick={() => { setSelectedFile(file); setAnalysisResult(null); }}
+                        >
+                          <div className="flex items-center gap-2 truncate">
+                            {getFileIcon(file.language)}
+                            <span className="truncate text-sm">{file.name}</span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={(e) => { e.stopPropagation(); removeFile(file.name); }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                      </div>
+                    </ScrollArea>
+                  </div>
                 )}
-                Fix Code
-              </Button>
-            </CardFooter>
-          </Card>
+
+                <div className="space-y-2">
+                  <Label htmlFor="error-message">Error Message</Label>
+                  <Textarea
+                    id="error-message"
+                    placeholder="Paste your error message here..."
+                    className="min-h-[120px] font-code text-sm"
+                    value={errorMessage}
+                    onChange={(e) => setErrorMessage(e.target.value)}
+                    disabled={files.length === 0}
+                  />
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="secondary" disabled>
+                        <Play className="mr-2 h-4 w-4" />
+                        Run File
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>File execution is not supported in this environment for security reasons.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <Button onClick={handleSubmit} disabled={isLoading || !selectedFile}>
+                  {isLoading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Wand2 className="mr-2 h-4 w-4" />
+                  )}
+                  Fix Code
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+          
 
           <div className="space-y-8">
             {isLoading && (
