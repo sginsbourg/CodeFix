@@ -16,4 +16,5 @@ export {
   File as FileIcon,
   X,
   Trash2,
+  BookMarked,
 } from 'lucide-react';

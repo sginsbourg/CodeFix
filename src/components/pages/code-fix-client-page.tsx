@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, type DragEvent, ChangeEvent, MouseEvent } from 'react';
+import { useState, useRef, type DragEvent, ChangeEvent, MouseEvent, useEffect } from 'react';
 import {
   FileCode2,
   UploadCloud,
@@ -8,17 +8,18 @@ import {
   Download,
   Loader2,
   FileText,
-  File as FileIcon,
+  FileIcon,
   X,
   Trash2,
+  BookMarked,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { fixCodeAction } from '@/app/actions';
-import type { SuggestCodeFixesOutput } from '@/ai/flows/suggest-code-fixes';
+import { fixCodeAction, generateReadmeAction } from '@/app/actions';
+import type { SuggestCodeFixesOutput } from '@/ai/types/suggest-code-fixes-types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PrismAsyncLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -48,6 +49,15 @@ type CorrectedFile = {
   correctedCode: string;
 }
 
+const getInitialState = (key: string, defaultValue: boolean): boolean => {
+  if (typeof window === 'undefined') {
+    return defaultValue;
+  }
+  const storedValue = localStorage.getItem(key);
+  return storedValue !== null ? JSON.parse(storedValue) : defaultValue;
+};
+
+
 export default function CodeFixClientPage() {
   const { toast } = useToast();
   const [files, setFiles] = useState<UploadedFile[]>([]);
@@ -56,12 +66,33 @@ export default function CodeFixClientPage() {
   const [analysisResult, setAnalysisResult] = useState<SuggestCodeFixesOutput | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [dragActive, setDragActive] = useState<boolean>(false);
-  const [fixError, setFixError] = useState(true);
-  const [improveErrorHandling, setImproveErrorHandling] = useState(true);
-  const [addDebugging, setAddDebugging] = useState(true);
-  const [enhanceUserMessages, setEnhanceUserMessages] = useState(true);
+  
+  const [fixError, setFixError] = useState<boolean>(() => getInitialState('fixError', true));
+  const [improveErrorHandling, setImproveErrorHandling] = useState<boolean>(() => getInitialState('improveErrorHandling', true));
+  const [addDebugging, setAddDebugging] = useState<boolean>(() => getInitialState('addDebugging', true));
+  const [enhanceUserMessages, setEnhanceUserMessages] = useState<boolean>(() => getInitialState('enhanceUserMessages', true));
+
+  const [isGeneratingReadme, setIsGeneratingReadme] = useState<boolean>(false);
+  const [generatedReadme, setGeneratedReadme] = useState<string | null>(null);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    localStorage.setItem('fixError', JSON.stringify(fixError));
+  }, [fixError]);
+
+  useEffect(() => {
+    localStorage.setItem('improveErrorHandling', JSON.stringify(improveErrorHandling));
+  }, [improveErrorHandling]);
+
+  useEffect(() => {
+    localStorage.setItem('addDebugging', JSON.stringify(addDebugging));
+  }, [addDebugging]);
+
+  useEffect(() => {
+    localStorage.setItem('enhanceUserMessages', JSON.stringify(enhanceUserMessages));
+  }, [enhanceUserMessages]);
 
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
     const card = cardRef.current;
@@ -182,6 +213,7 @@ export default function CodeFixClientPage() {
 
     setIsLoading(true);
     setAnalysisResult(null);
+    setGeneratedReadme(null);
     const result = await fixCodeAction({
       files: files.map(f => ({name: f.name, content: f.content})),
       errorMessage,
@@ -196,7 +228,6 @@ export default function CodeFixClientPage() {
       toast({ variant: 'destructive', title: 'Analysis Error', description: result.error });
     } else if (result.data) {
       setAnalysisResult(result.data);
-      // If there are corrected files, select the first one to display.
       if (result.data.correctedFiles.length > 0) {
         const firstCorrectedFile = files.find(f => f.name === result.data.correctedFiles[0].name);
         if (firstCorrectedFile) {
@@ -207,12 +238,37 @@ export default function CodeFixClientPage() {
     }
   };
 
-  const handleDownload = (correctedFile: CorrectedFile) => {
-    const blob = new Blob([correctedFile.correctedCode], { type: 'text/plain' });
+  const handleGenerateReadme = async () => {
+    if (!analysisResult) return;
+
+    setIsGeneratingReadme(true);
+    setGeneratedReadme(null);
+
+    const projectFiles = files.map(originalFile => {
+      const correctedVersion = analysisResult.correctedFiles.find(cf => cf.name === originalFile.name);
+      return {
+        name: originalFile.name,
+        content: correctedVersion ? correctedVersion.correctedCode : originalFile.content,
+      };
+    });
+
+    const result = await generateReadmeAction({ files: projectFiles });
+    setIsGeneratingReadme(false);
+
+    if (result.error) {
+      toast({ variant: 'destructive', title: 'README Generation Error', description: result.error });
+    } else if (result.data) {
+      setGeneratedReadme(result.data.readme);
+      toast({ title: 'Success', description: 'README.md generated!' });
+    }
+  };
+
+  const handleDownload = (content: string, fileName: string) => {
+    const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = correctedFile.name;
+    a.download = fileName;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -223,6 +279,8 @@ export default function CodeFixClientPage() {
     setFiles([]);
     setSelectedFile(null);
     setAnalysisResult(null);
+    setGeneratedReadme(null);
+    setErrorMessage('');
   }
 
   const getCorrectedCodeForFile = (fileName: string | undefined): string | null => {
@@ -270,7 +328,7 @@ export default function CodeFixClientPage() {
                       onDragEnter={handleDrag}
                       onDragLeave={handleDrag}
                       onDragOver={handleDrag}
-      onDrop={handleDrop}
+                      onDrop={handleDrop}
                       onClick={onFileClick}
                     >
                       <input
@@ -404,6 +462,15 @@ export default function CodeFixClientPage() {
 
               {!isLoading && analysisResult && (
                 <>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="font-headline text-xl">Explanation</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground whitespace-pre-wrap">{analysisResult.explanation}</p>
+                    </CardContent>
+                  </Card>
+
                   {analysisResult.correctedFiles.length > 0 && (
                     <Card>
                       <CardHeader>
@@ -413,7 +480,7 @@ export default function CodeFixClientPage() {
                         {analysisResult.correctedFiles.map(file => (
                           <div key={file.name} className="flex items-center justify-between p-2 rounded-md bg-muted/30">
                             <span className="font-code text-sm">{file.name}</span>
-                            <Button size="sm" variant="secondary" onClick={() => handleDownload(file)}>
+                            <Button size="sm" variant="secondary" onClick={() => handleDownload(file.correctedCode, file.name)}>
                               <Download className="mr-2 h-4 w-4" />
                               Download
                             </Button>
@@ -422,6 +489,7 @@ export default function CodeFixClientPage() {
                       </CardContent>
                     </Card>
                   )}
+
                   {selectedFile && (
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                       <Card>
@@ -452,13 +520,44 @@ export default function CodeFixClientPage() {
                       </Card>
                     </div>
                   )}
+
                   <Card>
                     <CardHeader>
-                      <CardTitle className="font-headline text-xl">Explanation</CardTitle>
+                      <CardTitle className="font-headline text-xl">Generate README</CardTitle>
+                      <CardDescription>Create a README.md file for your project based on the latest code.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-muted-foreground whitespace-pre-wrap">{analysisResult.explanation}</p>
+                      <Button onClick={handleGenerateReadme} disabled={isGeneratingReadme}>
+                        {isGeneratingReadme ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <BookMarked className="mr-2 h-4 w-4" />
+                        )}
+                        Generate README.md
+                      </Button>
+                      {isGeneratingReadme && (
+                        <div className="mt-4 space-y-2">
+                          <Skeleton className="h-4 w-3/4" />
+                          <Skeleton className="h-4 w-1/2" />
+                        </div>
+                      )}
+                      {generatedReadme && (
+                         <div className="mt-4 rounded-md border bg-muted/30 p-4">
+                            <h4 className="font-semibold mb-2">Generated README.md</h4>
+                            <ScrollArea className="h-64">
+                                <pre className="text-sm whitespace-pre-wrap font-code">{generatedReadme}</pre>
+                            </ScrollArea>
+                         </div>
+                      )}
                     </CardContent>
+                    {generatedReadme && (
+                        <CardFooter>
+                            <Button variant="secondary" onClick={() => handleDownload(generatedReadme, 'README.md')}>
+                                <Download className="mr-2 h-4 w-4" />
+                                Download README.md
+                            </Button>
+                        </CardFooter>
+                    )}
                   </Card>
                 </>
               )}

@@ -1,12 +1,11 @@
 'use server';
 
-import { suggestCodeFixes, type SuggestCodeFixesInput, type SuggestCodeFixesOutput } from '@/ai/flows/suggest-code-fixes';
+import { suggestCodeFixes } from '@/ai/flows/suggest-code-fixes';
+import { generateReadme } from '@/ai/flows/generate-readme';
 import { z } from 'zod';
-
-const FileSchema = z.object({
-  name: z.string(),
-  content: z.string(),
-});
+import type { GenerateReadmeInput, GenerateReadmeOutput } from '@/ai/types/generate-readme-types';
+import type { SuggestCodeFixesInput, SuggestCodeFixesOutput } from '@/ai/types/suggest-code-fixes-types';
+import {FileSchema} from '@/ai/types/shared-types';
 
 const ActionInputSchema = z.object({
   files: z.array(FileSchema).min(1, 'At least one file is required.'),
@@ -34,5 +33,27 @@ export async function fixCodeAction(input: SuggestCodeFixesInput): Promise<{ dat
   } catch (e) {
     console.error(e);
     return { data: null, error: 'An unexpected error occurred while analyzing the code.' };
+  }
+}
+
+const ReadmeActionInputSchema = z.object({
+  files: z.array(FileSchema).min(1, 'At least one file is required.'),
+});
+
+export async function generateReadmeAction(input: GenerateReadmeInput): Promise<{ data: GenerateReadmeOutput | null; error: string | null }> {
+  const validation = ReadmeActionInputSchema.safeParse(input);
+  if (!validation.success) {
+    return { data: null, error: 'At least one file is required to generate a README.' };
+  }
+
+  try {
+    const result = await generateReadme(validation.data);
+    if (!result.readme) {
+      return { data: null, error: "The AI couldn't generate a README. Please try again." };
+    }
+    return { data: result, error: null };
+  } catch (e) {
+    console.error(e);
+    return { data: null, error: 'An unexpected error occurred while generating the README.' };
   }
 }
