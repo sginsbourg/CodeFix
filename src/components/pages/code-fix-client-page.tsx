@@ -22,7 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { fixCodeAction } from '@/app/actions';
 import type { SuggestCodeFixesOutput } from '@/ai/flows/suggest-code-fixes';
 import { Skeleton } from '@/components/ui/skeleton';
-import SyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism';
+import { PrismAsyncLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import python from 'react-syntax-highlighter/dist/esm/languages/prism/python';
 import batch from 'react-syntax-highlighter/dist/esm/languages/prism/batch';
@@ -474,3 +474,5 @@ export default function CodeFixClientPage() {
     </div>
   );
 }
+
+    
