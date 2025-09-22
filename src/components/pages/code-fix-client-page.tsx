@@ -13,13 +13,14 @@ import {
   Trash2,
   BookMarked,
   ClipboardPaste,
+  Eye,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { fixCodeAction, generateReadmeAction } from '@/app/actions';
+import { fixCodeAction, generateReadmeAction, getReadmeAction } from '@/app/actions';
 import type { SuggestCodeFixesOutput } from '@/ai/types/suggest-code-fixes-types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PrismAsyncLight as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -81,6 +82,9 @@ export default function CodeFixClientPage() {
   const [isGeneratingReadme, setIsGeneratingReadme] = useState<boolean>(false);
   const [generatedReadme, setGeneratedReadme] = useState<string | null>(null);
   
+  const [isReviewingReadme, setIsReviewingReadme] = useState<boolean>(false);
+  const [existingReadme, setExistingReadme] = useState<string | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -271,6 +275,7 @@ export default function CodeFixClientPage() {
     setIsLoading(true);
     setAnalysisResult(null);
     setGeneratedReadme(null);
+    setExistingReadme(null);
     const result = await fixCodeAction({
       files: files.map(f => ({name: f.name, content: f.content})),
       errorMessage,
@@ -320,6 +325,18 @@ export default function CodeFixClientPage() {
     }
   };
 
+  const handleReviewReadme = async () => {
+    setIsReviewingReadme(true);
+    setExistingReadme(null);
+    const result = await getReadmeAction();
+    setIsReviewingReadme(false);
+    if (result.error) {
+      toast({ variant: 'destructive', title: 'Error', description: result.error });
+    } else if (result.data) {
+      setExistingReadme(result.data);
+    }
+  };
+
   const handleDownload = (content: string, fileName: string) => {
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -338,6 +355,7 @@ export default function CodeFixClientPage() {
     setAnalysisResult(null);
     setGeneratedReadme(null);
     setErrorMessage('');
+    setExistingReadme(null);
     
     // Clear relevant localStorage
     if (typeof window !== 'undefined') {
@@ -405,8 +423,8 @@ export default function CodeFixClientPage() {
                       onDragEnter={handleDrag}
                       onDragLeave={handleDrag}
                       onDragOver={handleDrag}
-                      onDrop={handleDrop}
-                      onClick={onFileClick}
+      onDrop={handleDrop}
+      onClick={onFileClick}
                     >
                       <input
                         ref={fileInputRef}
@@ -505,7 +523,15 @@ export default function CodeFixClientPage() {
                       </div>
                   </div>
                 </CardContent>
-                <CardFooter className="flex justify-end">
+                <CardFooter className="flex justify-between items-center">
+                  <Button variant="outline" onClick={handleReviewReadme} disabled={isReviewingReadme}>
+                    {isReviewingReadme ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Eye className="mr-2 h-4 w-4" />
+                      )}
+                      Review README
+                  </Button>
                   <Button onClick={handleSubmit} disabled={isLoading || files.length === 0}>
                     {isLoading ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -543,109 +569,127 @@ export default function CodeFixClientPage() {
                 </>
               )}
 
-              {!isLoading && analysisResult && (
+              {!isLoading && (existingReadme || analysisResult) && (
                 <>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="font-headline text-xl">Explanation</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-muted-foreground whitespace-pre-wrap">{analysisResult.explanation}</p>
-                    </CardContent>
-                  </Card>
-
-                  {analysisResult.correctedFiles.length > 0 && (
+                  {existingReadme && !analysisResult && (
                     <Card>
                       <CardHeader>
-                        <CardTitle className="font-headline text-xl">Corrected Files</CardTitle>
+                        <CardTitle className="font-headline text-xl">README.md</CardTitle>
+                        <CardDescription>This is the current README.md file for your project.</CardDescription>
                       </CardHeader>
-                      <CardContent className="space-y-2">
-                        {analysisResult.correctedFiles.map(file => (
-                          <div key={file.name} className="flex items-center justify-between p-2 rounded-md bg-muted/30">
-                            <span className="font-code text-sm">{file.name}</span>
-                            <Button size="sm" variant="secondary" onClick={() => handleDownload(file.correctedCode, file.name)}>
-                              <Download className="mr-2 h-4 w-4" />
-                              Download
-                            </Button>
-                          </div>
-                        ))}
+                      <CardContent>
+                        <ScrollArea className="h-96 rounded-md border bg-muted/30 p-4">
+                          <pre className="text-sm whitespace-pre-wrap font-code">{existingReadme}</pre>
+                        </ScrollArea>
                       </CardContent>
                     </Card>
                   )}
-
-                  {selectedFile && (
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                
+                  {analysisResult && (
+                    <>
                       <Card>
                         <CardHeader>
-                          <CardTitle className="font-headline text-lg">Original Code ({selectedFile.name})</CardTitle>
+                          <CardTitle className="font-headline text-xl">Explanation</CardTitle>
                         </CardHeader>
-                        <CardContent className="p-0">
-                          <SyntaxHighlighter language={selectedFile.language} style={atomDark} showLineNumbers customStyle={{ margin: 0, borderRadius: '0 0 0.5rem 0.5rem', maxHeight: '500px' }} codeTagProps={{ className: 'font-code' }}>
-                            {selectedFile.content}
-                          </SyntaxHighlighter>
+                        <CardContent>
+                          <p className="text-muted-foreground whitespace-pre-wrap">{analysisResult.explanation}</p>
                         </CardContent>
                       </Card>
-                      <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
-                          <CardTitle className="font-headline text-lg">Corrected Code</CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-0">
-                          {correctedFileForSelected ? (
-                            <SyntaxHighlighter language={selectedFile.language} style={atomDark} showLineNumbers customStyle={{ margin: 0, borderRadius: '0 0 0.5rem 0.5rem', maxHeight: '500px' }} codeTagProps={{ className: 'font-code' }}>
-                              {correctedFileForSelected}
-                            </SyntaxHighlighter>
-                          ) : (
-                            <div className="flex items-center justify-center h-full p-6 text-center text-muted-foreground rounded-b-lg bg-muted/20">
-                              <p>No changes suggested for this file.</p>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </div>
-                  )}
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="font-headline text-xl">Generate README</CardTitle>
-                      <CardDescription>Create a README.md file for your project based on the latest code.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Button onClick={handleGenerateReadme} disabled={isGeneratingReadme}>
-                        {isGeneratingReadme ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <BookMarked className="mr-2 h-4 w-4" />
-                        )}
-                        Generate README.md
-                      </Button>
-                      {isGeneratingReadme && (
-                        <div className="mt-4 space-y-2">
-                          <Skeleton className="h-4 w-3/4" />
-                          <Skeleton className="h-4 w-1/2" />
+    
+                      {analysisResult.correctedFiles.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="font-headline text-xl">Corrected Files</CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-2">
+                            {analysisResult.correctedFiles.map(file => (
+                              <div key={file.name} className="flex items-center justify-between p-2 rounded-md bg-muted/30">
+                                <span className="font-code text-sm">{file.name}</span>
+                                <Button size="sm" variant="secondary" onClick={() => handleDownload(file.correctedCode, file.name)}>
+                                  <Download className="mr-2 h-4 w-4" />
+                                  Download
+                                </Button>
+                              </div>
+                            ))}
+                          </CardContent>
+                        </Card>
+                      )}
+    
+                      {selectedFile && (
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="font-headline text-lg">Original Code ({selectedFile.name})</CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                              <SyntaxHighlighter language={selectedFile.language} style={atomDark} showLineNumbers customStyle={{ margin: 0, borderRadius: '0 0 0.5rem 0.5rem', maxHeight: '500px' }} codeTagProps={{ className: 'font-code' }}>
+                                {selectedFile.content}
+                              </SyntaxHighlighter>
+                            </CardContent>
+                          </Card>
+                          <Card>
+                            <CardHeader className="flex flex-row items-center justify-between">
+                              <CardTitle className="font-headline text-lg">Corrected Code</CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                              {correctedFileForSelected ? (
+                                <SyntaxHighlighter language={selectedFile.language} style={atomDark} showLineNumbers customStyle={{ margin: 0, borderRadius: '0 0 0.5rem 0.5rem', maxHeight: '500px' }} codeTagProps={{ className: 'font-code' }}>
+                                  {correctedFileForSelected}
+                                </SyntaxHighlighter>
+                              ) : (
+                                <div className="flex items-center justify-center h-full p-6 text-center text-muted-foreground rounded-b-lg bg-muted/20">
+                                  <p>No changes suggested for this file.</p>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
                         </div>
                       )}
-                      {generatedReadme && (
-                         <div className="mt-4 rounded-md border bg-muted/30 p-4">
-                            <h4 className="font-semibold mb-2">Generated README.md</h4>
-                            <ScrollArea className="h-64">
-                                <pre className="text-sm whitespace-pre-wrap font-code">{generatedReadme}</pre>
-                            </ScrollArea>
-                         </div>
-                      )}
-                    </CardContent>
-                    {generatedReadme && (
-                        <CardFooter>
-                            <Button variant="secondary" onClick={() => handleDownload(generatedReadme, 'README.md')}>
-                                <Download className="mr-2 h-4 w-4" />
-                                Download README.md
-                            </Button>
-                        </CardFooter>
-                    )}
-                  </Card>
+    
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="font-headline text-xl">Generate README</CardTitle>
+                          <CardDescription>Create a README.md file for your project based on the latest code.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <Button onClick={handleGenerateReadme} disabled={isGeneratingReadme}>
+                            {isGeneratingReadme ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <BookMarked className="mr-2 h-4 w-4" />
+                            )}
+                            Generate README.md
+                          </Button>
+                          {isGeneratingReadme && (
+                            <div className="mt-4 space-y-2">
+                              <Skeleton className="h-4 w-3/4" />
+                              <Skeleton className="h-4 w-1/2" />
+                            </div>
+                          )}
+                          {generatedReadme && (
+                             <div className="mt-4 rounded-md border bg-muted/30 p-4">
+                                <h4 className="font-semibold mb-2">Generated README.md</h4>
+                                <ScrollArea className="h-64">
+                                    <pre className="text-sm whitespace-pre-wrap font-code">{generatedReadme}</pre>
+                                </ScrollArea>
+                             </div>
+                          )}
+                        </CardContent>
+                        {generatedReadme && (
+                            <CardFooter>
+                                <Button variant="secondary" onClick={() => handleDownload(generatedReadme, 'README.md')}>
+                                    <Download className="mr-2 h-4 w-4" />
+                                    Download README.md
+                                </Button>
+                            </CardFooter>
+                        )}
+                      </Card>
+                    </>
+                  )}
                 </>
               )}
 
-              {!isLoading && !analysisResult && (
+              {!isLoading && !analysisResult && !existingReadme && (
                 <Card className="flex flex-col items-center justify-center text-center h-[50vh] border-dashed">
                   <CardContent className="pt-6">
                     <Wand2 className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -667,5 +711,3 @@ export default function CodeFixClientPage() {
     </div>
   );
 }
-
-    
