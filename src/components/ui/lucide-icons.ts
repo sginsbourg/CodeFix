@@ -17,4 +17,5 @@ export {
   X,
   Trash2,
   BookMarked,
+  ClipboardPaste,
 } from 'lucide-react';

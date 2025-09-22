@@ -12,6 +12,7 @@ import {
   X,
   Trash2,
   BookMarked,
+  ClipboardPaste,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -315,6 +316,17 @@ export default function CodeFixClientPage() {
     localStorage.removeItem('generatedReadme');
   }
 
+  const handlePasteFromClipboard = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      setErrorMessage(text);
+      toast({ title: 'Success', description: 'Pasted error message from clipboard.' });
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not read from clipboard. Please check permissions.' });
+      console.error('Failed to read clipboard contents: ', error);
+    }
+  };
+
   const getCorrectedCodeForFile = (fileName: string | undefined): string | null => {
     if (!fileName || !analysisResult) return null;
     const correctedFile = analysisResult.correctedFiles.find(f => f.name === fileName);
@@ -421,7 +433,13 @@ export default function CodeFixClientPage() {
                   )}
 
                   <div className="space-y-2">
-                    <Label htmlFor="error-message">Error Message</Label>
+                    <div className="flex justify-between items-center">
+                      <Label htmlFor="error-message">Error Message</Label>
+                      <Button variant="outline" size="sm" onClick={handlePasteFromClipboard} disabled={files.length === 0}>
+                        <ClipboardPaste className="mr-2 h-4 w-4"/>
+                        Paste from Clipboard
+                      </Button>
+                    </div>
                     <Textarea
                       id="error-message"
                       placeholder="Paste your error message here..."
