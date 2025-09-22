@@ -14,13 +14,13 @@ export async function fixCodeAction(input: SuggestCodeFixesInput): Promise<{ dat
     return { data: result, error: null };
   } catch (e: any) {
     console.error(e);
-    // Check if it's a Zod validation error
+    // Catch Zod validation errors and other exceptions
     if (e.errors) {
       const fieldErrors = e.flatten().fieldErrors;
-      const errorMessage = fieldErrors.files?.[0] || fieldErrors.errorMessage?.[0] || 'Invalid input.';
+      const errorMessage = Object.values(fieldErrors).flat()[0] || 'Invalid input.';
       return { data: null, error: errorMessage };
     }
-    return { data: null, error: 'An unexpected error occurred while analyzing the code.' };
+    return { data: null, error: e.message || 'An unexpected error occurred while analyzing the code.' };
   }
 }
 
@@ -34,8 +34,10 @@ export async function generateReadmeAction(input: GenerateReadmeInput): Promise<
   } catch (e: any) {
     console.error(e);
      if (e.errors) {
-      return { data: null, error: 'At least one file is required to generate a README.' };
+      const fieldErrors = e.flatten().fieldErrors;
+      const errorMessage = Object.values(fieldErrors).flat()[0] || 'Invalid input.';
+      return { data: null, error: errorMessage };
     }
-    return { data: null, error: 'An unexpected error occurred while generating the README.' };
+    return { data: null, error: e.message || 'An unexpected error occurred while generating the README.' };
   }
 }
