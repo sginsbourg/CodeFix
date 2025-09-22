@@ -65,7 +65,7 @@ const getInitialState = <T,>(key: string, defaultValue: T): T => {
 };
 
 
-export default function CodeFixClientPage() {
+export default function CodeFixClientPage({ version }: { version: string }) {
   const { toast } = useToast();
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [selectedFile, setSelectedFile] = useState<UploadedFile | null>(null);
@@ -392,7 +392,7 @@ export default function CodeFixClientPage() {
         <main className="container mx-auto px-4 py-8 md:py-12">
           <header className="text-center mb-12">
             <h1 className="font-headline text-4xl md:text-5xl font-bold tracking-tight">
-              CodeFix
+              CodeFix <span className="text-2xl text-muted-foreground font-light align-middle">v{version}</span>
             </h1>
             <p className="text-muted-foreground mt-2 text-lg">
               Your AI-powered assistant for debugging code.
