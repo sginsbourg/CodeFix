@@ -52,9 +52,9 @@ export default function CodeFixClientPage() {
     const { left, top, width, height } = card.getBoundingClientRect();
     const x = e.clientX - left - width / 2;
     const y = e.clientY - top - height / 2;
-    const rotateX = (y / height) * -15;
-    const rotateY = (x / width) * 15;
-    card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+    const rotateX = (y / height) * -5; // Reduced intensity
+    const rotateY = (x / width) * 5; // Reduced intensity
+    card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.01, 1.01, 1.01)`; // Reduced scale
   };
 
   const handleMouseLeave = () => {
@@ -181,7 +181,7 @@ export default function CodeFixClientPage() {
     a.href = url;
     a.download = extension ? `${name}.fixed.${extension}` : `${name}.fixed.txt`;
     document.body.appendChild(a);
-    a.click();
+a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
