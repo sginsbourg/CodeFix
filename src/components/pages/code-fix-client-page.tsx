@@ -14,6 +14,7 @@ import {
   BookMarked,
   ClipboardPaste,
   Eye,
+  Github,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -398,13 +399,21 @@ export default function CodeFixClientPage({ version }: { version: string }) {
     <div className="min-h-screen bg-grid p-4 sm:p-6 md:p-8">
       <div className="mx-auto max-w-7xl rounded-lg border bg-card/80 shadow-2xl backdrop-blur-lg">
         <main className="container mx-auto px-4 py-6 md:py-8">
-          <header className="text-center mb-10">
+          <header className="relative text-center mb-10">
             <h1 className="font-headline text-4xl md:text-5xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-primary via-primary/80 to-primary">
               CodeFix <span className="text-2xl text-muted-foreground font-light align-middle">v{version}</span>
             </h1>
             <p className="text-muted-foreground mt-2 text-lg">
               Your AI-powered assistant for debugging code.
             </p>
+            <div className="absolute top-0 right-0">
+              <a href="https://github.com/sginsbourg/CodeFix" target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" size="icon">
+                  <Github className="h-5 w-5" />
+                  <span className="sr-only">GitHub</span>
+                </Button>
+              </a>
+            </div>
           </header>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start perspective">
@@ -719,5 +728,3 @@ export default function CodeFixClientPage({ version }: { version: string }) {
     </div>
   );
 }
-
-    
